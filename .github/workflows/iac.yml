@@ -1,11 +1,13 @@
 ---
-name: Function Main workflow
+name: IaC 
 # PR closed trigger
 on:
   # Trigger the workflow on pull request
   push:
     branches:
       - master
+    paths:
+      - "iac/**"
 jobs:
   main:
     name: Main
