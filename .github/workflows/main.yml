@@ -1,0 +1,15 @@
+---
+name: Soffice Main workflow
+# PR closed trigger
+on:
+  # Trigger the workflow on pull request
+  push:
+    branches:
+      - master
+jobs:
+  plan_terraform:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    steps: 
+      - name: Checkout Repo and Init terraform
+        uses: actions/checkout@v2.0.0
