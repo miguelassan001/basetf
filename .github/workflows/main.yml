@@ -6,6 +6,8 @@ on:
   push:
     branches:
       - master
+    paths-ignore:
+      - 'iac/**'
 jobs:
   main:
     name: Main
