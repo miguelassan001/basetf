@@ -1,18 +1,18 @@
 ---
-name: Terraform Plan Workflow
+name: Terraform Apply Workflow
 # PR closed trigger
 on:
-  # Trigger the workflow on pull request
-  pull_request:
+  # Trigger the workflow on pull request merged
+  push: 
     branches:
       - master
+    paths:
+      - "iac/**"
 jobs:
-  plan_terraform:
-    name: Terraform Plan
+  apply_terraform:
+    name: Terraform Apply
     runs-on: ubuntu-latest
     steps: 
-      - name: Checkout Repo and Init terraform
-        uses: actions/checkout@v2.0.0
       - name: Checkout Repo and Init terraform
         uses: actions/checkout@v2.0.0
       - name: Select TF var (last commit file in tfvars/ folder)
@@ -29,7 +29,7 @@ jobs:
           export ARTIFACTORY_SUBPATH="${BUSINESS_UNIT}/${DEPARTMENT}/${PROJECT}"
           echo ::set-env name=artifactorysubpath::${ARTIFACTORY_SUBPATH}
         working-directory: ./
-      - name: Terraform Init
+      - name: 'Terraform Init'
         uses: hashicorp/terraform-github-actions@v0.7.1
         with:
           tf_actions_version: 0.12.20
@@ -39,11 +39,7 @@ jobs:
           args: '-backend-config="username=${{ secrets.ARTIFACTORY_USER }}" -backend-config="password=${{ secrets.ARTIFACTORY_PASSWORD }}" -backend-config="url=${{ secrets.ARTIFACTORY_URL }}" -backend-config="repo=${{ secrets.ARTIFACTORY_REPO }}" -backend-config="subpath=${{ env.artifactorysubpath }}"'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Select TF var (last commit file in tfvars/ folder)
-        run: |
-          export LAST_VAR_FILE="tfvars/$(ls tfvars/ -1t|head -1)"
-          echo ::set-env name=lastfile::$LAST_VAR_FILE
-      - name: Terraform Plan
+      - name: 'Terraform Plan***'
         uses: hashicorp/terraform-github-actions@v0.7.1
         with:
           tf_actions_version: 0.12.20
@@ -53,3 +49,24 @@ jobs:
           args: '-var-file=${{ env.lastfile }}'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: 'Terraform Apply'
+        uses: hashicorp/terraform-github-actions@v0.7.1
+        with:
+          tf_actions_version: 0.12.20
+          tf_actions_subcommand: 'apply'
+          tf_actions_working_dir: '.'
+          tf_actions_comment: true
+          args: '-var-file=${{ env.lastfile }}'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Store date terraform state backup
+        run: |
+          DATE_FOLDER=$(date '+%Y%m%d%H%M%S')
+          curl -u "$ARTIFACTORY_USER:$ARTIFACTORY_PASSWORD" -X POST "$ARTIFACTORY_URL/api/copy/$ARTIFACTORY_REPO/$ARTIFACTORY_SUBPATH/terraform.tfstate?to=/$ARTIFACTORY_REPO/$ARTIFACTORY_SUBPATH/$DATE_FOLDER/terraform.tfstate"
+        env:
+          ARTIFACTORY_USER: ${{ secrets.ARTIFACTORY_USER }}
+          ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+          ARTIFACTORY_URL: ${{ secrets.ARTIFACTORY_URL }}
+          ARTIFACTORY_REPO: ${{ secrets.ARTIFACTORY_REPO }}
+          ARTIFACTORY_SUBPATH: ${{ env.artifactorysubpath }}
+        

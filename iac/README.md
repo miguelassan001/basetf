@@ -1,4 +1,4 @@
-test
+Terraform test recipes
 .
 .
 .

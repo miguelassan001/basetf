@@ -1,4 +1,8 @@
-terraform {
-  backend "artifactory" {
-  }
-}
+#terraform {
+#backend "azurerm" {
+#storage_account_name = ""
+#container_name       = ""
+#key                  = ""
+#sas_token = ""
+#}
+#}
