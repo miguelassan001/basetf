@@ -10,7 +10,9 @@ on:
     paths:
       - "iac/**"
 env:
-  PROJECT_TFVARS: project.tfvars
+  PROJECT_TFVARS: 'project.tfvars'
+  TF_WORKING_DIR: './iac'
+  TF_ACTION_VERSION: '0.12.24'
 jobs:
   validate_terraform:
     name: Validate Terraform
@@ -23,7 +25,7 @@ jobs:
           export TERRAFORM_ARG_TFVARS=""
           for tfvarfile in *.tfvars; do TERRAFORM_ARG_TFVARS="-var-file=$tfvarfile $TERRAFORM_ARG_TFVARS"; done
           echo ::set-env name=terraformargtfvars::${TERRAFORM_ARG_TFVARS}
-        working-directory: ./iac
+        working-directory: ${{ env.TF_WORKING_DIR}}
       - name: Build Path 
         run: |
           export BUSINESS_UNIT=$(grep "business_unit \+=" ${{ env.PROJECT_TFVARS }} | awk -F\" '{print tolower($2)}')
@@ -33,32 +35,32 @@ jobs:
           export TFSTATE_PATH="${BUSINESS_UNIT}/${DEPARTMENT}/${PROJECT}"
           echo ::set-env name=tfstatepath::${TFSTATE_PATH}
           env
-        working-directory: ./iac
-      #- name: 'Terraform Init'
-      #  uses: hashicorp/terraform-github-actions@v0.7.1
-      #  with:
-      #    tf_actions_version: 0.12.20
-      #    tf_actions_subcommand: 'init'
-      #    tf_actions_working_dir: '.'
-      #    tf_actions_comment: true
-      #    args: '-backend-config="storage_account_name=${{ secrets.STORAGE_ACCOUNT_NAME }}" -backend-config="container_name=${{ secrets.CONTAINER_NAME }}" -backend-config="sas_token=${{ secrets.SAS_TOKEN }}" -backend-config="key=${{ env.tfstatepath }}\terraform.tfstate"'
-      #    env:
-      #      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: ${{ env.TF_WORKING_DIR}}
+      - name: 'Terraform Init'
+        uses: hashicorp/terraform-github-actions@v0.8.0
+        with:
+          tf_actions_version: ${{ env.TF_ACTION_VERSION}}
+          tf_actions_subcommand: 'init'
+          tf_actions_working_dir: ${{ env.TF_WORKING_DIR}}
+          tf_actions_comment: true
+          args: '-backend-config="storage_account_name=${{ secrets.STORAGE_ACCOUNT_NAME }}" -backend-config="container_name=${{ secrets.CONTAINER_NAME }}" -backend-config="sas_token=${{ secrets.SAS_TOKEN }}" -backend-config="key=${{ env.tfstatepath }}\terraform.tfstate"'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Terraform Format
         uses: hashicorp/terraform-github-actions@v0.8.0
         with:
-          tf_actions_version: 0.12.24
+          tf_actions_version: ${{ env.TF_ACTION_VERSION}}
           tf_actions_subcommand: 'fmt'
-          tf_actions_working_dir: './iac'
+          tf_actions_working_dir: ${{ env.TF_WORKING_DIR}}
           tf_actions_comment: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Terraform Validate
         uses: hashicorp/terraform-github-actions@v0.8.0
         with:
-          tf_actions_version: 0.12.24
+          tf_actions_version: ${{ env.TF_ACTION_VERSION}}
           tf_actions_subcommand: 'validate'
-          tf_actions_working_dir: './iac'
+          tf_actions_working_dir: ${{ env.TF_WORKING_DIR}}
           tf_actions_comment: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
