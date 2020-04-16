@@ -31,7 +31,7 @@ jobs:
           export PROJECT=$(grep "project \+=" ${{ env.PROJECT_TFVARS }} | awk -F\" '{print tolower($2)}')
           if [[ -z $BUSINESS_UNIT || -z $DEPARTMENT || -z $PROJECT ]]; then echo "Wrong project.tfvars content" && exit 1;fi
           export TFSTATE_PATH="${BUSINESS_UNIT}/${DEPARTMENT}/${PROJECT}"
-          echo ::set-env name=tfstatepath::${ARTIFACTORY_SUBPATH}
+          echo ::set-env name=tfstatepath::${TFSTATE_PATH}
         working-directory: ./iac
       - name: 'Terraform Init'
         uses: hashicorp/terraform-github-actions@v0.8.0
