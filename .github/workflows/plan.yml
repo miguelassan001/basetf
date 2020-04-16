@@ -1,5 +1,5 @@
 ---
-name: Terraform Validate Workflow
+name: Terraform Plan Workflow
 
 on:
   # Trigger the workflow on dev push
@@ -15,7 +15,7 @@ env:
   TF_ACTION_VERSION: '0.12.24'
 jobs:
   validate_terraform:
-    name: Validate Terraform
+    name: Plan Terraform
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo and Init terraform
