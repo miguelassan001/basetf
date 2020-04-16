@@ -2,7 +2,7 @@
 name: Terraform Plan Workflow
 
 on:
-  # Trigger the workflow on dev push
+  # Trigger the workflow on master pull request
   pull_request:
     # Future: Run in ALL branches
     branches:

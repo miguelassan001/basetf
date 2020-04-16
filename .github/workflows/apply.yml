@@ -2,7 +2,7 @@
 name: Terraform Apply Workflow
 
 on:
-  # Trigger the workflow on dev push
+  # Trigger the workflow on master push
   push:
     # Future: Run in ALL branches
     branches:
