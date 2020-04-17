@@ -10,7 +10,7 @@ on:
     paths:
       - "iac/**"
 env:
-  PROJECT_TFVARS: 'project.tfvars'
+  PROJECT_AUTO_TFVARS: 'project.auto.tfvars'
   TF_WORKING_DIR: './iac'
   TF_ACTION_VERSION: '0.12.24'
 jobs:
@@ -23,18 +23,19 @@ jobs:
       - name: Select TF var (last commit file in tfvars/ folder)
         run: |
           export TERRAFORM_ARG_TFVARS=""
-          for tfvarfile in *.tfvars; do TERRAFORM_ARG_TFVARS="-var-file=$tfvarfile $TERRAFORM_ARG_TFVARS"; done
+          for tfvarfile in $( find . | grep -P '(?!.*(auto))(?!.*terraform\.(tfvars|tfvars\.json))^(.*\.(tfvars|tfvars\.json))$')
+            do TERRAFORM_ARG_TFVARS="-var-file=$tfvarfile $TERRAFORM_ARG_TFVARS"; 
+          done
           echo ::set-env name=terraformargtfvars::${TERRAFORM_ARG_TFVARS}
         working-directory: ${{ env.TF_WORKING_DIR}}
       - name: Build Path 
         run: |
-          export BUSINESS_UNIT=$(grep "business_unit \+=" ${{ env.PROJECT_TFVARS }} | awk -F\" '{print tolower($2)}')
-          export DEPARTMENT=$(grep "department \+=" ${{ env.PROJECT_TFVARS }} | awk -F\" '{print tolower($2)}')
-          export PROJECT=$(grep "project \+=" ${{ env.PROJECT_TFVARS }} | awk -F\" '{print tolower($2)}')
+          export BUSINESS_UNIT=$(grep "business_unit \+=" ${{ env.PROJECT_AUTO_TFVARS }} | awk -F\" '{print tolower($2)}')
+          export DEPARTMENT=$(grep "department \+=" ${{ env.PROJECT_AUTO_TFVARS }} | awk -F\" '{print tolower($2)}')
+          export PROJECT=$(grep "project \+=" ${{ env.PROJECT_AUTO_TFVARS }} | awk -F\" '{print tolower($2)}')
           if [[ -z $BUSINESS_UNIT || -z $DEPARTMENT || -z $PROJECT ]]; then echo "Wrong project.tfvars content" && exit 1;fi
           export TFSTATE_PATH="${BUSINESS_UNIT}/${DEPARTMENT}/${PROJECT}"
           echo ::set-env name=tfstatepath::${TFSTATE_PATH}
-          env
         working-directory: ${{ env.TF_WORKING_DIR}}
       - name: 'Terraform Init'
         uses: hashicorp/terraform-github-actions@v0.8.0
