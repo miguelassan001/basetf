@@ -1,4 +1,4 @@
 resource "local_file" "fichero" {
-   content  = var.project
+  content  = var.project
   filename = "file2.txt"
 }
