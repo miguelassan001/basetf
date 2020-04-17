@@ -18,26 +18,25 @@ jobs:
     name: Plan Terraform
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repo and Init terraform
+      - name: Checkout Repo
         uses: actions/checkout@v2.0.0
-      - name: Search TFVARS https://www.terraform.io/docs/configuration/variables.html
+      - name: 'Search TFVARS https://www.terraform.io/docs/configuration/variables.html'
         run: |
           export TERRAFORM_ARG_TFVARS=""
           for tfvarfile in $( find . | grep -P '(?!.*(auto))(?!.*terraform\.(tfvars|tfvars\.json))^(.*\.(tfvars|tfvars\.json))$')
             do TERRAFORM_ARG_TFVARS="-var-file=$tfvarfile $TERRAFORM_ARG_TFVARS"; 
           done
           echo ::set-env name=terraformargtfvars::${TERRAFORM_ARG_TFVARS}
-          env
         working-directory: ${{ env.TF_WORKING_DIR}}
-      - name: Build Path 
+      - name: 'Build Path'
         run: |
           export BUSINESS_UNIT=$(grep "business_unit \+=" ${{ env.PROJECT_AUTO_TFVARS }} | awk -F\" '{print tolower($2)}')
           export DEPARTMENT=$(grep "department \+=" ${{ env.PROJECT_AUTO_TFVARS }} | awk -F\" '{print tolower($2)}')
           export PROJECT=$(grep "project \+=" ${{ env.PROJECT_AUTO_TFVARS }} | awk -F\" '{print tolower($2)}')
+          export ENVIRONMENT=$(grep "environment \+=" ${{ env.PROJECT_AUTO_TFVARS }} | awk -F\" '{print tolower($2)}')
           if [[ -z $BUSINESS_UNIT || -z $DEPARTMENT || -z $PROJECT ]]; then echo "Wrong ${{ env.PROJECT_AUTO_TFVARS }} content" && exit 1;fi
-          export TFSTATE_PATH="${BUSINESS_UNIT}/${DEPARTMENT}/${PROJECT}"
+          export TFSTATE_PATH="${BUSINESS_UNIT}/${DEPARTMENT}/${PROJECT}/${ENVIRONMENT}"
           echo ::set-env name=tfstatepath::${TFSTATE_PATH}
-          env
         working-directory: ${{ env.TF_WORKING_DIR}}
       - name: 'Terraform Init'
         uses: hashicorp/terraform-github-actions@v0.8.0
