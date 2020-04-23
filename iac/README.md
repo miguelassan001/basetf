@@ -15,3 +15,4 @@ Push DEV --> Terraform Init Fmt Validate --> PR MASTER --> Terraform Plan --> Me
 
 
 
+jue abr 23 09:20:58 UTC 2020
