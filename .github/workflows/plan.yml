@@ -20,23 +20,43 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v2.0.0
-      - name: 'Search TFVARS https://www.terraform.io/docs/configuration/variables.html'
+      - name: 'Get enviroment tfvars'
         run: |
+          # Default precedence https://www.terraform.io/docs/configuration/variables.html
+          # Workflow precedence (order provided precedence): environment tfvars, root tfvars  
+
+          # get enviroment info head commit: "i.e.: (dev) this is the message"
+          #echo "HeadCommit_MSGs:$(jq '.' $GITHUB_EVENT_PATH --raw-output | grep message)"
+          export ENVIRONMENT_COMMIT_MESSAGE=$(jq '.head_commit.message' $GITHUB_EVENT_PATH --raw-output | awk -F '[()]' '{print $(NR+1)}')
+          echo "Environment: $ENVIRONMENT_COMMIT_MESSAGE"
+          if ([[ ! -d "environments/$ENVIRONMENT_COMMIT_MESSAGE" ]] || [[ -z "$ENVIRONMENT_COMMIT_MESSAGE" ]]); then echo "Wrong environment provided (usage: i.e.: (dev) commit message)"; exit 1 ; fi
+
+
+          # build tfvars arg
           export TERRAFORM_ARG_TFVARS=""
-          for tfvarfile in $( find . | grep -P '(?!.*(auto))(?!.*terraform\.(tfvars|tfvars\.json))^(.*\.(tfvars|tfvars\.json))$')
-            do TERRAFORM_ARG_TFVARS="-var-file=$tfvarfile $TERRAFORM_ARG_TFVARS"; 
+          # environment vars (higher precedence)
+          for tfvarfile in $( find environments/$ENVIRONMENT_COMMIT_MESSAGE -type f | grep -P '(^(.*\.(tfvars|tfvars\.json))$)' )
+            do TERRAFORM_ARG_TFVARS="$TERRAFORM_ARG_TFVARS-var-file=$tfvarfile "; 
+            echo "ENV-$TERRAFORM_ARG_TFVARS"
           done
-          echo ::set-env name=terraformargtfvars::${TERRAFORM_ARG_TFVARS}
+          # common tfvars root folder (terraform.tfvars ans *auto* are excluded)
+          for tfvarfile in $( find . -maxdepth 1 -type f | grep -P '(?!.*(auto))(?!.*terraform\.(tfvars|tfvars\.json))^(.*\.(tfvars|tfvars\.json))$' )
+            do TERRAFORM_ARG_TFVARS="$TERRAFORM_ARG_TFVARS-var-file=$tfvarfile "; 
+            echo "ROOT-$TERRAFORM_ARG_TFVARS"
+          done
+          echo "+++++++++++++ TFVARS: $TERRAFORM_ARG_TFVARS"
+          echo ::set-env name=Environment_Commited::${ENVIRONMENT_COMMIT_MESSAGE}
+          echo ::set-env name=TerraformArgTfvars::${TERRAFORM_ARG_TFVARS}
         working-directory: ${{ env.TF_WORKING_DIR}}
-      - name: 'Build Path'
+      - name: 'Build Path for Remote Tfstate'
         run: |
           export BUSINESS_UNIT=$(grep "business_unit \+=" ${{ env.PROJECT_AUTO_TFVARS }} | awk -F\" '{print tolower($2)}')
           export DEPARTMENT=$(grep "department \+=" ${{ env.PROJECT_AUTO_TFVARS }} | awk -F\" '{print tolower($2)}')
           export PROJECT=$(grep "project \+=" ${{ env.PROJECT_AUTO_TFVARS }} | awk -F\" '{print tolower($2)}')
-          export ENVIRONMENT=$(grep "environment \+=" ${{ env.PROJECT_AUTO_TFVARS }} | awk -F\" '{print tolower($2)}')
+          export ENVIRONMENT=${{ env.Environment_Commited }}
           if [[ -z $BUSINESS_UNIT || -z $DEPARTMENT || -z $PROJECT ]]; then echo "Wrong ${{ env.PROJECT_AUTO_TFVARS }} content" && exit 1;fi
           export TFSTATE_PATH="${BUSINESS_UNIT}/${DEPARTMENT}/${PROJECT}/${ENVIRONMENT}"
-          echo ::set-env name=tfstatepath::${TFSTATE_PATH}
+          echo ::set-env name=TfstatePath::${TFSTATE_PATH}
         working-directory: ${{ env.TF_WORKING_DIR}}
       - name: 'Terraform Init'
         uses: hashicorp/terraform-github-actions@v0.8.0
@@ -45,7 +65,26 @@ jobs:
           tf_actions_subcommand: 'init'
           tf_actions_working_dir: ${{ env.TF_WORKING_DIR}}
           tf_actions_comment: true
-          args: '-backend-config="storage_account_name=${{ secrets.AZ_STORAGE_ACCOUNT_NAME }}" -backend-config="container_name=${{ secrets.AZ_CONTAINER_NAME }}" -backend-config="sas_token=${{ secrets.AZ_SAS_TOKEN }}" -backend-config="key=${{ env.tfstatepath }}/terraform.tfstate"'
+          args: '-backend-config="storage_account_name=${{ secrets.AZ_STORAGE_ACCOUNT_NAME }}" -backend-config="container_name=${{ secrets.AZ_CONTAINER_NAME }}" -backend-config="sas_token=${{ secrets.AZ_SAS_TOKEN }}" -backend-config="key=${{ env.TfstatePath }}/terraform.tfstate"'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Terraform Format
+        uses: hashicorp/terraform-github-actions@v0.8.0
+        with:
+          tf_actions_version: ${{ env.TF_ACTION_VERSION}}
+          tf_actions_subcommand: 'fmt'
+          tf_actions_working_dir: ${{ env.TF_WORKING_DIR}}
+          tf_actions_comment: true
+          args: '-recursive -check -write=false -diff'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Terraform Validate
+        uses: hashicorp/terraform-github-actions@v0.8.0
+        with:
+          tf_actions_version: ${{ env.TF_ACTION_VERSION}}
+          tf_actions_subcommand: 'validate'
+          tf_actions_working_dir: ${{ env.TF_WORKING_DIR}}
+          tf_actions_comment: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: 'Terraform Plan'
@@ -55,7 +94,7 @@ jobs:
           tf_actions_subcommand: 'plan'
           tf_actions_working_dir: ${{ env.TF_WORKING_DIR}}
           tf_actions_comment: true
-          args: '${{ env.terraformargtfvars }}'
+          args: '${{ env.TerraformArgTfvars }} -lock=true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
