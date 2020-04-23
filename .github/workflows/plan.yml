@@ -13,6 +13,8 @@ env:
   PROJECT_AUTO_TFVARS: 'project.auto.tfvars'
   TF_WORKING_DIR: './iac'
   TF_ACTION_VERSION: '0.12.24'
+  TF_ENVIROMENTS_PATH: 'environments/'
+  GITHUB_MESSAGE_PATH: .pull_request.title
 jobs:
   validate_terraform:
     name: Plan Terraform
@@ -26,17 +28,14 @@ jobs:
           # Workflow precedence (order provided precedence): environment tfvars, root tfvars  
 
           # get enviroment info head commit: "i.e.: (dev) this is the message"
-          #echo "HeadCommit_MSGs:$(jq '.' $GITHUB_EVENT_PATH --raw-output | grep message)"
-          jq '.' $GITHUB_EVENT_PATH --raw-output 
-          export ENVIRONMENT_COMMIT_MESSAGE=$(jq '.head_commit.message' $GITHUB_EVENT_PATH --raw-output | awk -F '[()]' '{print $(NR+1)}')
+          export ENVIRONMENT_COMMIT_MESSAGE=$(jq '{{ env.GITHUB_MESSAGE_PATH }}' $GITHUB_EVENT_PATH --raw-output | awk -F '[()]' '{print $(NR+1)}')
           echo "Environment: $ENVIRONMENT_COMMIT_MESSAGE"
-          if ([[ ! -d "environments/$ENVIRONMENT_COMMIT_MESSAGE" ]] || [[ -z "$ENVIRONMENT_COMMIT_MESSAGE" ]]); then echo "Wrong environment provided (usage: i.e.: (dev) commit message)"; exit 1 ; fi
-
+          if ([[ ! -d "{{ env.TF_ENVIROMENTS_PATH }}$ENVIRONMENT_COMMIT_MESSAGE" ]] || [[ -z "$ENVIRONMENT_COMMIT_MESSAGE" ]]); then echo "Wrong environment provided (usage: i.e.: (dev) commit message)"; exit 1 ; fi
 
           # build tfvars arg
           export TERRAFORM_ARG_TFVARS=""
           # environment vars (higher precedence)
-          for tfvarfile in $( find environments/$ENVIRONMENT_COMMIT_MESSAGE -type f | grep -P '(^(.*\.(tfvars|tfvars\.json))$)' )
+          for tfvarfile in $( find {{ env.TF_ENVIROMENTS_PATH }}$ENVIRONMENT_COMMIT_MESSAGE -type f | grep -P '(^(.*\.(tfvars|tfvars\.json))$)' )
             do TERRAFORM_ARG_TFVARS="$TERRAFORM_ARG_TFVARS-var-file=$tfvarfile "; 
             echo "ENV-$TERRAFORM_ARG_TFVARS"
           done
