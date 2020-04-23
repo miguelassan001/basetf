@@ -13,8 +13,3 @@ Push DEV --> Terraform Init Fmt Validate --> PR MASTER --> Terraform Plan --> Me
 * AZ_STORAGE_ACCOUNT_NAME
 
 
-
-
-jue abr 23 09:20:58 UTC 2020
-jue abr 23 09:22:34 UTC 2020
-jue abr 23 09:25:09 UTC 2020

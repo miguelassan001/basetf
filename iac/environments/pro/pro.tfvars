@@ -10,10 +10,10 @@ location = {
 
 environment       = "pro"  // environment: poc dev pre pro
 project           = "base" //JxIxRxA PROJECT
-project_iteration = "01"   //01..
+project_iteration = 01     //01..
 
 # Tags
-tags = {
+binding_tags = {
   app                 = "apppoc"
   business_contact    = "contact@example.com"
   managed_by          = "manager@example.com"
