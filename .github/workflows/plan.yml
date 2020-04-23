@@ -14,7 +14,7 @@ env:
   TF_WORKING_DIR: './iac'
   TF_ACTION_VERSION: '0.12.24'
   TF_ENVIROMENTS_PATH: 'environments/'
-  GITHUB_MESSAGE_PATH: .pull_request.title
+  GITHUB_MESSAGE_PATH: '.pull_request.title'
 jobs:
   validate_terraform:
     name: Plan Terraform
