@@ -27,6 +27,7 @@ jobs:
 
           # get enviroment info head commit: "i.e.: (dev) this is the message"
           #echo "HeadCommit_MSGs:$(jq '.' $GITHUB_EVENT_PATH --raw-output | grep message)"
+          jq '.' $GITHUB_EVENT_PATH --raw-output 
           export ENVIRONMENT_COMMIT_MESSAGE=$(jq '.head_commit.message' $GITHUB_EVENT_PATH --raw-output | awk -F '[()]' '{print $(NR+1)}')
           echo "Environment: $ENVIRONMENT_COMMIT_MESSAGE"
           if ([[ ! -d "environments/$ENVIRONMENT_COMMIT_MESSAGE" ]] || [[ -z "$ENVIRONMENT_COMMIT_MESSAGE" ]]); then echo "Wrong environment provided (usage: i.e.: (dev) commit message)"; exit 1 ; fi
