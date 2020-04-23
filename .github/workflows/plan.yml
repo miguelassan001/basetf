@@ -28,7 +28,7 @@ jobs:
           # Workflow precedence (order provided precedence): environment tfvars, root tfvars  
 
           # get enviroment info head commit: "i.e.: (dev) this is the message"
-          export ENVIRONMENT_COMMIT_MESSAGE=$(jq '{{ env.GITHUB_MESSAGE_PATH }}' $GITHUB_EVENT_PATH --raw-output | awk -F '[()]' '{print $(NR+1)}')
+          export ENVIRONMENT_COMMIT_MESSAGE=$(jq {{ env.GITHUB_MESSAGE_PATH }} $GITHUB_EVENT_PATH --raw-output | awk -F '[()]' '{print $(NR+1)}')
           echo "Environment: $ENVIRONMENT_COMMIT_MESSAGE"
           if ([[ ! -d "{{ env.TF_ENVIROMENTS_PATH }}$ENVIRONMENT_COMMIT_MESSAGE" ]] || [[ -z "$ENVIRONMENT_COMMIT_MESSAGE" ]]); then echo "Wrong environment provided (usage: i.e.: (dev) commit message)"; exit 1 ; fi
 
