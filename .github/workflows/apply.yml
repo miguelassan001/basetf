@@ -15,6 +15,9 @@ env:
   TF_ACTION_VERSION: '0.12.24'
   TF_ENVIROMENTS_PATH: 'environments/'
   GITHUB_MESSAGE_PATH: .head_commit.message
+  # auth vars higher priority
+  TF_PLAN_APPLY_VARS: '-var="subscription_id=${{ secrets.AZ_SUBSCRIPTION_ID }}" -var="client_id=${{ secrets.AZ_CLIENT_ID }}" -var="client_secret=${{ secrets.AZ_CLIENT_SECRET }}" -var="tenant_id=${{ secrets.AZ_TENANT_ID }}"'
+
 jobs:
   validate_terraform:
     name: Apply Terraform
@@ -33,7 +36,7 @@ jobs:
           if ([[ ! -d "${{ env.TF_ENVIROMENTS_PATH }}$ENVIRONMENT_COMMIT_MESSAGE" ]] || [[ -z "$ENVIRONMENT_COMMIT_MESSAGE" ]]); then echo "Wrong environment provided (usage: i.e.: (dev) commit message)"; exit 1 ; fi
 
           # build tfvars arg
-          export TERRAFORM_ARG_TFVARS=""
+          export TERRAFORM_ARG_TFVARS="${{ env.TF_PLAN_APPLY_VARS }} "
           # environment vars (higher precedence)
           for tfvarfile in $( find ${{ env.TF_ENVIROMENTS_PATH }}$ENVIRONMENT_COMMIT_MESSAGE -type f | grep -P '(^(.*\.(tfvars|tfvars\.json))$)' )
             do TERRAFORM_ARG_TFVARS="$TERRAFORM_ARG_TFVARS-var-file=$tfvarfile "; 

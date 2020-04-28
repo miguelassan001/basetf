@@ -13,5 +13,5 @@ jobs:
     name: Main
     runs-on: ubuntu-latest
     steps: 
-      - name: Checkout Repo and Init terraform
+      - name: Checkout Repo 
         uses: actions/checkout@v2.0.0

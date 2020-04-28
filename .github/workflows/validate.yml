@@ -15,6 +15,7 @@ env:
   TF_ACTION_VERSION: '0.12.24'
   TF_ENVIROMENTS_PATH: 'environments/'
   GITHUB_MESSAGE_PATH: .commits[-1].message
+  
 jobs:
   validate_terraform:
     name: Validate Terraform
