@@ -1,5 +1,5 @@
 ---
-  name: Terraform Apply Workflow
+  name: Terraform Workflow
   
   on:
     push:
