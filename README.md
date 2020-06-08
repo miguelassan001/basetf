@@ -1,7 +1,4 @@
 
-AZ_CONTAINER_NAME
-AZ_SAS_TOKEN
-AZ_STORAGE_ACCOUNT_NAME
-
+Base TF container executer
 
 
