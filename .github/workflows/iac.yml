@@ -20,7 +20,7 @@
   env:
     PROJECT_AUTO_TFVARS: 'project.auto.tfvars'
     TF_WORKING_DIR: './iac'
-    TF_ACTION_VERSION: '0.12.24'
+    TF_ACTION_VERSION: '0.12.25'
     TF_ENVIROMENTS_PATH: 'environments/'
     GITHUB_APPLY_MESSAGE_PATH: '.head_commit.message' ### push on master
     GITHUB_PLAN_MESSAGE_PATH: '.pull_request.title' ### pull request on master
@@ -99,17 +99,15 @@
         # Default precedence https://www.terraform.io/docs/configuration/variables.html
         - name: 'Build Tfvars'
           run: |
-            ls -l
             # Workflow precedence (order provided precedence): environment tfvars, root tfvars  
             # Build tfvars arg
             # Get all tfvars in root path
             export TERRAFORM_ARG_TFVARS="-var-file=./${{ env.PREFIX }}-landing.tfvars.json "
             # Include Cloud varfile if exists
-            if [[ -f "${PREFIX}-cloud-${ENVIRONMENT}.tfvars.json" ]]; then echo export TERRAFORM_ARG_TFVARS="$TERRAFORM_ARG_TFVARS -var-file=./${PREFIX}-cloud-${ENVIRONMENT}.tfvars.json" ; fi
+            if [[ -f "${PREFIX}-cloud.tfvars.json" ]]; then export TERRAFORM_ARG_TFVARS="$TERRAFORM_ARG_TFVARS -var-file=./${PREFIX}-cloud.tfvars.json " ; fi
             # environment vars (higher precedence)
             for tfvarfile in $( find ${{ env.TF_ENVIROMENTS_PATH }}$ENVIRONMENT -type f | grep -P '(^(.*\.(tfvars|tfvars\.json))$)' )
-              do TERRAFORM_ARG_TFVARS="$TERRAFORM_ARG_TFVARS-var-file=$tfvarfile "; 
-              echo "ENV-$TERRAFORM_ARG_TFVARS"
+              do TERRAFORM_ARG_TFVARS="$TERRAFORM_ARG_TFVARS-var-file=$tfvarfile ";
             done
             ## common tfvars root folder (terraform.tfvars ans *auto* are excluded)
             ##for tfvarfile in $( find . -maxdepth 1 -type f | grep -P '(?!.*(auto))(?!.*terraform\.(tfvars|tfvars\.json))^(.*\.(tfvars|tfvars\.json))$' )
@@ -146,7 +144,7 @@
         - name: 'Terraform Init'
           id: init
           run: |
-            terraform init -no-color -get=true -get-plugins=true -lock=true -backend-config="./${PREFIX}-backend.tfvars.json"
+            terraform init -no-color -get=true -get-plugins=true -upgrade -lock=true -backend-config="./${PREFIX}-backend.tfvars.json"
           working-directory: ${{ env.TF_WORKING_DIR}}
           env:
             PREFIX : ${{ env.PREFIX }}
@@ -220,5 +218,8 @@
             echo "" > ./${{ env.PREFIX }}-backend.tfvars.json; rm -fr ./${{ env.PREFIX }}-backend.tfvars.json
             echo "" > ./${{ env.PREFIX }}-landing.tfvars.json; rm -fr ./${{ env.PREFIX }}-landing.tfvars.json
             echo "" > ./${{ env.PREFIX }}-cloud.tfvars.json; rm -fr ./${{ env.PREFIX }}-cloud.tfvars.json
-            ls -l
+            rm -fr .terraform/
+            rm -fr .azure/
+
+
   

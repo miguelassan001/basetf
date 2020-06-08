@@ -1,5 +1,8 @@
 # Variable files
-terraform.tfvars
+##terraform.tfvars
+*landing.tfvars.json
+*cloud.tfvars.json
+*backend.tfvars.json
 
 # Compiled files
 *.tfstate

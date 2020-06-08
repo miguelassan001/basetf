@@ -5,14 +5,14 @@
 ```
 Push (any branch except *master*) --> **Terraform Init Fmt Validate** [-->] PR MASTER --> **Terraform Plan** --> Merge *master* --> Terraform Apply
 ```
-![Flow](https://raw.githubusercontent.com/miguelassan001/azureweb/master/iac/diagram.png)
+![Flow](diagram.png)
 
 # Gitops: Environment Commit Message
 * (env) .*
 
 env: dev, pre, pro.... 
 1) match with the list of folders in iac/environments/ directory
-2) match with TF_ENVIRONMENT
+2) match with TF_*_'ENVIRONMENT' (i.e. TF_BACKEND_DEV)
 
 
 # Secrets Variables
