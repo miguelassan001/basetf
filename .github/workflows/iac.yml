@@ -68,7 +68,7 @@
         - name: 'Select environment'
           run: |
             ls -lsrt
-            env
+            jq . $GITHUB_EVENT_PATH
             exit 1
 
 
@@ -184,7 +184,7 @@
             TFVARS_ARG : ${{ env.TerraformArgTfvars }}
 
         - name: 'Comment Plan'
-          uses: actions/github-script@0.9.0
+          uses: actions/github-script@2.0.0
           if: ${{ github.event_name == 'pull_request' }}
           env:
             STDOUT: "```${{ steps.plan.outputs.stdout }}```"
