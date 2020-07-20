@@ -69,12 +69,10 @@
           run: |
             which git 
             echo "...."
-            #git ls-files
-            git ls-files --modified
+            git diff --name-only HEAD^^..HEAD | grep -i "$TF_ENVIROMENTS_PATH"
             #git ls-files --modified | grep -i "$TF_ENVIROMENTS_PATH"
             #git diff --name-only origin/master..HEAD | grep -i "$TF_ENVIROMENTS_PATH"
             exit 111
-
 
 
 
