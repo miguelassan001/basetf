@@ -184,7 +184,7 @@
             TFVARS_ARG : ${{ env.TerraformArgTfvars }}
 
         - name: 'Comment Plan'
-          uses: actions/github-script@2.0.0
+          uses: actions/github-script@v2.0.0
           if: ${{ github.event_name == 'pull_request' }}
           env:
             STDOUT: "```${{ steps.plan.outputs.stdout }}```"
