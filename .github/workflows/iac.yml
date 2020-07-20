@@ -68,11 +68,11 @@
         - name: 'Select environment'
           run: |
             git ls-files --modified | grep -i "environments/"
-            git diff --name-only HEAD HEAD~1 | grep -i "environments/"
+            git diff --name-only origin/master..HEAD | grep -i "$TF_ENVIROMENTS_PATH"
             exit 1
 
 
-            
+
 
 
 
