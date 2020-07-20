@@ -78,7 +78,6 @@
 
 
 
-
         # Config of: terraform backend (tfstate store) and resource destination
         - name: 'Select Terraform Backend and Landing'
           run: |
