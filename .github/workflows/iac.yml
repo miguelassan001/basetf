@@ -1,5 +1,5 @@
 ---
-  name: Heimdall Query IaC Workflow
+  name: IaC Workflow
 
   on:
     push:
@@ -12,10 +12,7 @@
       branches:
         - master
       paths:
-        - "iac/**"
-    release: ### ........
-      branches:
-        - master
+        - "iac/environments/**"
 
   env:
     PROJECT_AUTO_TFVARS: 'project.auto.tfvars'
@@ -34,7 +31,7 @@
       steps:
 
         - name: 'Checkout Repo'
-          uses: actions/checkout@v2.0.0
+          uses: actions/checkout@v2.3.1
 
         # Push on any branch
         - name: 'Commit Message -- Terraform Validate'
@@ -55,17 +52,29 @@
             export GITHUB_MESSAGE_PATH=${{ env.GITHUB_VALIDATE_MESSAGE_PATH }} && echo $GITHUB_MESSAGE_PATH
             echo ::set-env name=GITHUB_MESSAGE_PATH::${GITHUB_MESSAGE_PATH}
 
-        # Based on commit message deploy on (environment)
-        - name: 'Select Environment on Commit Message'
+        # # Based on commit message deploy on (environment)
+        # - name: 'Select Environment on Commit Message'
+        #   run: |
+        #     # Get enviroment info head commit: "i.e.: (dev) this is the message"
+        #     export ENVIRONMENT_COMMIT_MESSAGE=$(jq ${{ env.GITHUB_MESSAGE_PATH }} $GITHUB_EVENT_PATH --raw-output | awk -F '[()]' '{print $(NR+1)}')
+        #     echo "Commit message: $(jq ${{ env.GITHUB_MESSAGE_PATH }} $GITHUB_EVENT_PATH --raw-output)"
+        #     echo "Environment: $ENVIRONMENT_COMMIT_MESSAGE"
+        #     # Check if the environments path contains the environment set in the commited message
+        #     if ([[ ! -d "${{ env.TF_ENVIROMENTS_PATH }}$ENVIRONMENT_COMMIT_MESSAGE" ]] || [[ -z "$ENVIRONMENT_COMMIT_MESSAGE" ]]); then echo "ERROR: Wrong environment provided (usage: i.e.: (dev) commit message)"; exit 1 ; fi
+        #     echo ::set-env name=Environment_Commited::${ENVIRONMENT_COMMIT_MESSAGE}
+        #   working-directory: ${{ env.TF_WORKING_DIR}}
+
+        # Get environment
+        - name: 'Select environment'
           run: |
-            # Get enviroment info head commit: "i.e.: (dev) this is the message"
-            export ENVIRONMENT_COMMIT_MESSAGE=$(jq ${{ env.GITHUB_MESSAGE_PATH }} $GITHUB_EVENT_PATH --raw-output | awk -F '[()]' '{print $(NR+1)}')
-            echo "Commit message: $(jq ${{ env.GITHUB_MESSAGE_PATH }} $GITHUB_EVENT_PATH --raw-output)"
-            echo "Environment: $ENVIRONMENT_COMMIT_MESSAGE"
-            # Check if the environments path contains the environment set in the commited message
-            if ([[ ! -d "${{ env.TF_ENVIROMENTS_PATH }}$ENVIRONMENT_COMMIT_MESSAGE" ]] || [[ -z "$ENVIRONMENT_COMMIT_MESSAGE" ]]); then echo "ERROR: Wrong environment provided (usage: i.e.: (dev) commit message)"; exit 1 ; fi
-            echo ::set-env name=Environment_Commited::${ENVIRONMENT_COMMIT_MESSAGE}
-          working-directory: ${{ env.TF_WORKING_DIR}}
+            ls -lsrt
+            env
+            exit 1
+
+
+
+
+
 
         # Config of: terraform backend (tfstate store) and resource destination
         - name: 'Select Terraform Backend and Landing'
