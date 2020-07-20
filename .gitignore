@@ -24,3 +24,10 @@ terraform.log
 # swap
 [._]*.s[a-w][a-z]
 [._]s[a-w][a-z]
+
+
+# Others
+.idea/
+
+# postman
+postman/
