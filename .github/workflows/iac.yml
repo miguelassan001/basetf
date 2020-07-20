@@ -67,8 +67,8 @@
         # Get environment
         - name: 'Select environment'
           run: |
-            ls -lsrt
-            jq . $GITHUB_EVENT_PATH
+            git ls-files --modified | grep -i "environments/"
+            git diff --name-only HEAD HEAD~1 | grep -i "environments/"
             exit 1
 
 
