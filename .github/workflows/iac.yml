@@ -67,6 +67,8 @@
         # Get environment
         - name: 'Select environment'
           run: |
+            which git 
+            echo "...."
             git ls-files --modified | grep -i "environments/"
             git diff --name-only origin/master..HEAD | grep -i "$TF_ENVIROMENTS_PATH"
             exit 111
