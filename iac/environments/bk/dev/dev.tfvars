@@ -1,2 +1,236 @@
-# Environment vars
-environment = "dev" // environment: poc dev pre pro
+---
+  name: IaC Workflow
+
+  on:
+    push:
+      # Validate: all branches
+      # Apply: master
+      paths:
+        - "iac/**"
+    pull_request:
+      # Plan: master
+      branches:
+        - master
+      paths:
+        - "iac/environments/**"
+
+  env:
+    PROJECT_AUTO_TFVARS: 'project.auto.tfvars'
+    TF_WORKING_DIR: './iac'
+    TF_ACTION_VERSION: '0.12.28'
+    TF_ENVIROMENTS_PATH: 'environments/'
+    GITHUB_APPLY_MESSAGE_PATH: '.head_commit.message' ### push on master
+    GITHUB_PLAN_MESSAGE_PATH: '.pull_request.title' ### pull request on master
+    GITHUB_VALIDATE_MESSAGE_PATH: '.commits[-1].message' ### push on any branch
+
+  jobs:
+    validate_terraform:
+      name: Terraform
+      runs-on: ubuntu-latest
+
+      steps:
+
+        - name: 'Checkout Repo'
+          uses: actions/checkout@v2.3.1
+          with:
+            fetch-depth: 0
+
+        # Push on any branch
+        - name: 'Commit Message -- Terraform Validate'
+          if: ${{ github.ref != 'refs/heads/master' }}
+          run: |
+            export GITHUB_MESSAGE_PATH=${{ env.GITHUB_VALIDATE_MESSAGE_PATH }} && echo $GITHUB_MESSAGE_PATH
+            echo ::set-env name=GITHUB_MESSAGE_PATH::${GITHUB_MESSAGE_PATH}
+        # Pull request on master
+        - name: 'Commit Message -- Terraform Plan'
+          if: ${{ github.event_name == 'pull_request' }}
+          run: |
+            export GITHUB_MESSAGE_PATH=${{ env.GITHUB_PLAN_MESSAGE_PATH }} && echo $GITHUB_MESSAGE_PATH
+            echo ::set-env name=GITHUB_MESSAGE_PATH::${GITHUB_MESSAGE_PATH}
+        # Push on master
+        - name: 'Commit Message -- Terraform Apply'
+          if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          run: |
+            export GITHUB_MESSAGE_PATH=${{ env.GITHUB_VALIDATE_MESSAGE_PATH }} && echo $GITHUB_MESSAGE_PATH
+            echo ::set-env name=GITHUB_MESSAGE_PATH::${GITHUB_MESSAGE_PATH}
+
+        # # Based on commit message deploy on (environment)
+        # - name: 'Select Environment on Commit Message'
+        #   run: |
+        #     # Get enviroment info head commit: "i.e.: (dev) this is the message"
+        #     export ENVIRONMENT_COMMIT_MESSAGE=$(jq ${{ env.GITHUB_MESSAGE_PATH }} $GITHUB_EVENT_PATH --raw-output | awk -F '[()]' '{print $(NR+1)}')
+        #     echo "Commit message: $(jq ${{ env.GITHUB_MESSAGE_PATH }} $GITHUB_EVENT_PATH --raw-output)"
+        #     echo "Environment: $ENVIRONMENT_COMMIT_MESSAGE"
+        #     # Check if the environments path contains the environment set in the commited message
+        #     if ([[ ! -d "${{ env.TF_ENVIROMENTS_PATH }}$ENVIRONMENT_COMMIT_MESSAGE" ]] || [[ -z "$ENVIRONMENT_COMMIT_MESSAGE" ]]); then echo "ERROR: Wrong environment provided (usage: i.e.: (dev) commit message)"; exit 1 ; fi
+        #     echo ::set-env name=Environment_Commited::${ENVIRONMENT_COMMIT_MESSAGE}
+        #   working-directory: ${{ env.TF_WORKING_DIR}}
+
+        # Get environment
+        - name: 'Get files between two pushes (1+ commits)'
+          run: |
+            which git 
+            echo "...."
+            export COMMIT_ID_CURRENT=$(jq .after $GITHUB_EVENT_PATH --raw-output)
+            export COMMIT_ID_BEFORE=$(jq .before $GITHUB_EVENT_PATH --raw-output)
+            echo "...."
+            echo "commit_ids=\n$COMMIT_ID_CURRENT\n$COMMIT_ID_BEFORE"
+            echo "files"
+            git diff --name-only $COMMIT_ID_CURRENT $COMMIT_ID_BEFORE
+            ###echo "rev-list"
+            ###git rev-list HEAD
+            ####echo "reflog"
+            ####git reflog show origin/master
+            
+            exit 111
+
+        # Config of: terraform backend (tfstate store) and resource destination
+        - name: 'Select Terraform Backend and Landing'
+          run: |
+            # Select Backend and Landing (future: variable names in github secrets!!!)
+            export PREFIX=$(date +%s%3N)
+            export ENVIRONMENT=$(echo ${ENVIROMENT_COMMITED}|tr a-z A-Z)
+            if ([[ ! -n "${ENVIRONMENT}" ]] || [[ -z ${ENVIRONMENT} ]]) then exit 1; fi
+            export AZ_TF_BACKEND="AZ_TF_BACKEND_$ENVIRONMENT"
+            export AZ_TF_LANDING="AZ_TF_LANDING_$ENVIRONMENT"
+            export TF_CLOUD_VARS="TF_CLOUD_VARS_$ENVIRONMENT"
+            bash -c 'echo ${!AZ_TF_BACKEND} > ${PREFIX}-backend.tfvars.json'
+            bash -c 'echo ${!AZ_TF_LANDING} > ${PREFIX}-landing.tfvars.json'
+            bash -c 'if ([[ -n "${!TF_CLOUD_VARS}" ]] || [[ ! -z ${!TF_CLOUD_VARS} ]]) then echo ${!TF_CLOUD_VARS} > ${PREFIX}-cloud.tfvars.json; fi'
+            echo ::set-env name=PREFIX::${PREFIX}
+          working-directory: ${{ env.TF_WORKING_DIR}}
+          env:
+            ENVIROMENT_COMMITED : ${{ env.Environment_Commited }}
+            # github future: dynamic secret variable name ${{ secrets.AZ_TF_BACKEND_$VARIABLE }}
+            AZ_TF_BACKEND_DEV : ${{ secrets.AZ_TF_BACKEND_DEV }}
+            AZ_TF_LANDING_DEV : ${{ secrets.AZ_TF_LANDING_DEV }}
+            TF_CLOUD_VARS_DEV : ${{ secrets.TF_CLOUD_VARS_DEV }}
+            AZ_TF_BACKEND_PRE : ${{ secrets.AZ_TF_BACKEND_PRE }}
+            AZ_TF_LANDING_PRE : ${{ secrets.AZ_TF_LANDING_PRE }}
+            TF_CLOUD_VARS_PRE : ${{ secrets.TF_CLOUD_VARS_PRE }}
+            AZ_TF_BACKEND_PRO : ${{ secrets.AZ_TF_BACKEND_PRO }}
+            AZ_TF_LANDING_PRO : ${{ secrets.AZ_TF_LANDING_PRO }}
+            TF_CLOUD_VARS_PRO : ${{ secrets.TF_CLOUD_VARS_PRO }}
+
+        # Terraform vars argument for environment: TF_CLOUD_VARS + environent vars (path/env)
+        # Default precedence https://www.terraform.io/docs/configuration/variables.html
+        - name: 'Build Tfvars'
+          run: |
+            # Workflow precedence (order provided precedence): environment tfvars, root tfvars
+            # Build tfvars arg
+            # Get all tfvars in root path
+            export TERRAFORM_ARG_TFVARS="-var-file=./${{ env.PREFIX }}-landing.tfvars.json "
+            # Include Cloud varfile if exists
+            if [[ -f "${PREFIX}-cloud.tfvars.json" ]]; then export TERRAFORM_ARG_TFVARS="$TERRAFORM_ARG_TFVARS -var-file=./${PREFIX}-cloud.tfvars.json " ; fi
+            # environment vars (higher precedence)
+            for tfvarfile in $( find ${{ env.TF_ENVIROMENTS_PATH }}$ENVIRONMENT -type f | grep -P '(^(.*\.(tfvars|tfvars\.json))$)' )
+              do TERRAFORM_ARG_TFVARS="$TERRAFORM_ARG_TFVARS-var-file=$tfvarfile ";
+            done
+            ## common tfvars root folder (terraform.tfvars ans *auto* are excluded)
+            ##for tfvarfile in $( find . -maxdepth 1 -type f | grep -P '(?!.*(auto))(?!.*terraform\.(tfvars|tfvars\.json))^(.*\.(tfvars|tfvars\.json))$' )
+            ##  do TERRAFORM_ARG_TFVARS="$TERRAFORM_ARG_TFVARS-var-file=$tfvarfile ";
+            ##  echo "ROOT-$TERRAFORM_ARG_TFVARS"
+            ##done
+            echo "+++++++++++++ TFVARS: $TERRAFORM_ARG_TFVARS"
+            echo ::set-env name=TerraformArgTfvars::${TERRAFORM_ARG_TFVARS}
+          working-directory: ${{ env.TF_WORKING_DIR}}
+          env:
+            PREFIX : ${{ env.PREFIX }}
+            ENVIRONMENT : ${{ env.Environment_Commited }}
+
+        # If share TFState and dynamic store is needed by project. Should be change the 'key' in terraform init as well
+        - name: 'Build Path for Remote Tfstate'
+          run: |
+            export BUSINESS_UNIT=$(grep "business_unit \+=" ${{ env.PROJECT_AUTO_TFVARS }} | awk -F\" '{print tolower($2)}')
+            export DEPARTMENT=$(grep "department \+=" ${{ env.PROJECT_AUTO_TFVARS }} | awk -F\" '{print tolower($2)}')
+            export PROJECT=$(grep "project \+=" ${{ env.PROJECT_AUTO_TFVARS }} | awk -F\" '{print tolower($2)}')
+            export ENVIRONMENT=${{ env.Environment_Commited }}
+            if [[ -z $BUSINESS_UNIT || -z $DEPARTMENT || -z $PROJECT ]]; then echo "Wrong ${{ env.PROJECT_AUTO_TFVARS }} content" && exit 1;fi
+            export TFSTATE_PATH="${BUSINESS_UNIT}/${DEPARTMENT}/${PROJECT}/${ENVIRONMENT}"
+            echo ::set-env name=TfstatePath::${TFSTATE_PATH}
+          working-directory: ${{ env.TF_WORKING_DIR}}
+
+        ########  TERRAFORM
+
+        - name: 'Setup Terraform'
+          uses: hashicorp/setup-terraform@v1.1.0
+          with:
+            terraform_version: ${{ env.TF_ACTION_VERSION }}
+
+        - name: 'Terraform Init'
+          id: init
+          run: |
+            terraform init -no-color -get=true -get-plugins=true -upgrade -lock=true -backend-config="./${PREFIX}-backend.tfvars.json" -backend-config="key=${{ env.TfstatePath }}/terraform.tfstate"
+          working-directory: ${{ env.TF_WORKING_DIR}}
+          env:
+            PREFIX : ${{ env.PREFIX }}
+
+        - name: 'Terraform fmt'
+          id: fmt
+          run: |
+            terraform fmt -recursive -check -write=false -diff
+          working-directory: ${{ env.TF_WORKING_DIR}}
+
+        - name: 'Terraform validate'
+          id: validate
+          run: |
+            terraform validate -no-color
+          working-directory: ${{ env.TF_WORKING_DIR}}
+
+          ######### PLAN
+
+        - name: 'Terraform Plan'
+          # Pull request on master
+          if: ${{ github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/master') }}
+          id: plan
+          run: |
+            terraform plan ${TFVARS_ARG} -lock=true -no-color
+          working-directory: ${{ env.TF_WORKING_DIR}}
+          env:
+            TFVARS_ARG : ${{ env.TerraformArgTfvars }}
+
+        - name: 'Comment Plan'
+          uses: actions/github-script@v2.0.0
+          if: ${{ github.event_name == 'pull_request' }}
+          env:
+            STDOUT: "```${{ steps.plan.outputs.stdout }}```"
+          with:
+            github-token: ${{ secrets.GITHUB_TOKEN }}
+            script: |
+              github.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: process.env.STDOUT
+              })
+
+        ######### APPLY
+
+        - name: 'Create Snapshot current tfstate in Azure'
+          if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          run: |
+            export AZ_STORAGE_ACCOUNT_NAME=$(jq .storage_account_name ./${{ env.PREFIX }}-backend.tfvars.json --raw-output)
+            export AZ_CONTAINER_NAME=$(jq .container_name ./${{ env.PREFIX }}-backend.tfvars.json --raw-output)
+            export AZ_SAS_TOKEN=$(jq .sas_token ./${{ env.PREFIX }}-backend.tfvars.json --raw-output)
+            export AZ_TFSTATE_NAME=$(jq .key ./${{ env.PREFIX }}-backend.tfvars.json --raw-output)
+            curl -X PUT -H "x-ms-date: $(date -u)" -H "x-ms-blob-type: BlockBlob" -H "Content-Type: application/json" -H "Content-Length: 0" "https://${AZ_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${AZ_CONTAINER_NAME}/${{ env.TfstatePath }}/${AZ_TFSTATE_NAME}${AZ_SAS_TOKEN}&comp=snapshot" -i
+          working-directory: ${{ env.TF_WORKING_DIR}}
+
+        - name: 'Terraform Apply'
+          if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          id: apply
+          run: |
+            terraform apply ${{ env.TerraformArgTfvars }} -lock=true -auto-approve -no-color
+          working-directory: ${{ env.TF_WORKING_DIR}}
+          env:
+            TFVARS_ARG : ${{ env.TerraformArgTfvars }}
+
+        # clean
+        - name: 'Remove backend and landing file'
+          run: |
+            echo "" > ./${{ env.PREFIX }}-backend.tfvars.json; rm -fr ./${{ env.PREFIX }}-backend.tfvars.json
+            echo "" > ./${{ env.PREFIX }}-landing.tfvars.json; rm -fr ./${{ env.PREFIX }}-landing.tfvars.json
+            echo "" > ./${{ env.PREFIX }}-cloud.tfvars.json; rm -fr ./${{ env.PREFIX }}-cloud.tfvars.json
+            rm -fr .terraform/
+            rm -fr .azure/
+

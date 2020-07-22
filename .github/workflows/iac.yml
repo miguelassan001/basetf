@@ -33,8 +33,8 @@
         - name: 'Checkout Repo'
           uses: actions/checkout@v2.3.1
           with:
+            # get all commits -- diff among pushes to master
             fetch-depth: 0
-
 
         # Push on any branch
         - name: 'Commit Message -- Terraform Validate'
@@ -77,13 +77,18 @@
             echo "...."
             echo "commit_ids=\n$COMMIT_ID_CURRENT\n$COMMIT_ID_BEFORE"
             echo "files"
-            git diff --name-only $COMMIT_ID_CURRENT $COMMIT_ID_BEFORE
+            COMMIT_FILES=$(git diff --name-only $COMMIT_ID_CURRENT $COMMIT_ID_BEFORE|sort|uniq|grep -i ${TF_ENVIROMENTS_PATH})
+            echo $COMMIT_FILES
             ###echo "rev-list"
             ###git rev-list HEAD
             ####echo "reflog"
             ####git reflog show origin/master
-            
+            echo ::set-env name=COMMIT_FILES::${COMMIT_FILES}
+            echo "files again"
+            echo ${{ env.COMMIT_FILES }}
             exit 111
+          env:
+            TF_WORKING_DIR : ${{ env.TF_WORKING_DIR}}
 
 
 
