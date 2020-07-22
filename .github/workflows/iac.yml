@@ -70,8 +70,8 @@
             which git 
             echo "...."
             export COMMIT_ID=$(jq .after $GITHUB_EVENT_PATH --raw-output)
-            #git rev-list HEAD
             git show --pretty="" --name-only $COMMIT_ID
+            git rev-list HEAD
             #git diff --name-only HEAD^^..HEAD | grep -i "$TF_ENVIROMENTS_PATH"
             #git ls-files --modified | grep -i "$TF_ENVIROMENTS_PATH"
             #git diff --name-only origin/master..HEAD | grep -i "$TF_ENVIROMENTS_PATH"
