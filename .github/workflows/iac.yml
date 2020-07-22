@@ -32,6 +32,9 @@
 
         - name: 'Checkout Repo'
           uses: actions/checkout@v2.3.1
+          with:
+            fetch-depth: 0
+
 
         # Push on any branch
         - name: 'Commit Message -- Terraform Validate'
@@ -78,6 +81,8 @@
             #git show --pretty="" --name-only $COMMIT_ID
             echo "rev-list"
             git rev-list HEAD
+            echo "reflog"
+            git reflog show origin/master
             #git diff --name-only HEAD^^..HEAD | grep -i "$TF_ENVIROMENTS_PATH"
             #git ls-files --modified | grep -i "$TF_ENVIROMENTS_PATH"
             #git diff --name-only origin/master..HEAD | grep -i "$TF_ENVIROMENTS_PATH"
