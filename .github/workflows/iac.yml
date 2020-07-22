@@ -70,6 +70,10 @@
             which git 
             echo "...."
             jq . $GITHUB_EVENT_PATH
+            echo "-"
+            cat $GITHUB_EVENT_PATH
+            echo "-"
+            git rev-list HEAD
             #git diff --name-only HEAD^^..HEAD | grep -i "$TF_ENVIROMENTS_PATH"
             #git ls-files --modified | grep -i "$TF_ENVIROMENTS_PATH"
             #git diff --name-only origin/master..HEAD | grep -i "$TF_ENVIROMENTS_PATH"
