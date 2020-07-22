@@ -90,9 +90,6 @@
             #git diff --name-only origin/master..HEAD | grep -i "$TF_ENVIROMENTS_PATH"
             exit 111
 
-            
-
-
 
 
 
