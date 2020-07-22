@@ -36,24 +36,24 @@
             # get all commits -- diff among pushes to master
             fetch-depth: 0
 
-        # Push on any branch
-        - name: 'Commit Message -- Terraform Validate'
-          if: ${{ github.ref != 'refs/heads/master' }}
-          run: |
-            export GITHUB_MESSAGE_PATH=${{ env.GITHUB_VALIDATE_MESSAGE_PATH }} && echo $GITHUB_MESSAGE_PATH
-            echo ::set-env name=GITHUB_MESSAGE_PATH::${GITHUB_MESSAGE_PATH}
-        # Pull request on master
-        - name: 'Commit Message -- Terraform Plan'
-          if: ${{ github.event_name == 'pull_request' }}
-          run: |
-            export GITHUB_MESSAGE_PATH=${{ env.GITHUB_PLAN_MESSAGE_PATH }} && echo $GITHUB_MESSAGE_PATH
-            echo ::set-env name=GITHUB_MESSAGE_PATH::${GITHUB_MESSAGE_PATH}
-        # Push on master
-        - name: 'Commit Message -- Terraform Apply'
-          if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
-          run: |
-            export GITHUB_MESSAGE_PATH=${{ env.GITHUB_VALIDATE_MESSAGE_PATH }} && echo $GITHUB_MESSAGE_PATH
-            echo ::set-env name=GITHUB_MESSAGE_PATH::${GITHUB_MESSAGE_PATH}
+        # # Push on any branch
+        # - name: 'Commit Message -- Terraform Validate'
+        #   if: ${{ github.ref != 'refs/heads/master' }}
+        #   run: |
+        #     export GITHUB_MESSAGE_PATH=${{ env.GITHUB_VALIDATE_MESSAGE_PATH }} && echo $GITHUB_MESSAGE_PATH
+        #     echo ::set-env name=GITHUB_MESSAGE_PATH::${GITHUB_MESSAGE_PATH}
+        # # Pull request on master
+        # - name: 'Commit Message -- Terraform Plan'
+        #   if: ${{ github.event_name == 'pull_request' }}
+        #   run: |
+        #     export GITHUB_MESSAGE_PATH=${{ env.GITHUB_PLAN_MESSAGE_PATH }} && echo $GITHUB_MESSAGE_PATH
+        #     echo ::set-env name=GITHUB_MESSAGE_PATH::${GITHUB_MESSAGE_PATH}
+        # # Push on master
+        # - name: 'Commit Message -- Terraform Apply'
+        #   if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+        #   run: |
+        #     export GITHUB_MESSAGE_PATH=${{ env.GITHUB_VALIDATE_MESSAGE_PATH }} && echo $GITHUB_MESSAGE_PATH
+        #     echo ::set-env name=GITHUB_MESSAGE_PATH::${GITHUB_MESSAGE_PATH}
 
         # # Based on commit message deploy on (environment)
         # - name: 'Select Environment on Commit Message'
@@ -84,12 +84,14 @@
             ####echo "reflog"
             ####git reflog show origin/master
             echo ::set-env name=FILES_COMMITED::${FILES_COMMITED}
-            echo "files again"
-            echo ${{ env.FILES_COMMITED }}
-            exit 111
           env:
             TF_WORKING_DIR : ${{ env.TF_WORKING_DIR}}
 
+        - name: ''
+          run: |
+            echo "files again"
+            echo ${{ env.FILES_COMMITED }}
+            exit 111
 
 
 
@@ -161,7 +163,7 @@
           working-directory: ${{ env.TF_WORKING_DIR}}
 
 
-        ########  TERRAFORM
+        ########  FMT + VALIDATE
 
         - name: 'Setup Terraform'
           uses: hashicorp/setup-terraform@v1.1.0
@@ -191,8 +193,8 @@
 
           ######### PLAN
 
-        - name: 'Terraform Plan'
           # Pull request on master
+        - name: 'Terraform Plan'
           if: ${{ github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/master') }}
           id: plan
           run: |
@@ -219,6 +221,7 @@
 
         ######### APPLY
 
+          # Push on master
         - name: 'Create Snapshot current tfstate in Azure'
           if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
           run: |
@@ -239,7 +242,7 @@
             TFVARS_ARG : ${{ env.TerraformArgTfvars }}
 
 
-        # clean
+        # clean files
         - name: 'Remove backend and landing file'
           run: |
             echo "" > ./${{ env.PREFIX }}-backend.tfvars.json; rm -fr ./${{ env.PREFIX }}-backend.tfvars.json
