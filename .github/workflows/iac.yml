@@ -77,15 +77,15 @@
             echo "...."
             echo "commit_ids=\n$COMMIT_ID_CURRENT\n$COMMIT_ID_BEFORE"
             echo "files"
-            COMMIT_FILES=$(git diff --name-only $COMMIT_ID_CURRENT $COMMIT_ID_BEFORE|sort|uniq|grep -i ${TF_ENVIROMENTS_PATH})
-            echo $COMMIT_FILES
+            FILES_COMMITED=$(git diff --name-only $COMMIT_ID_CURRENT $COMMIT_ID_BEFORE|sort|uniq|grep -i ${TF_ENVIROMENTS_PATH}|awk -F${TF_ENVIROMENTS_PATH} '{ print $2 }')
+            echo $FILES_COMMITED
             ###echo "rev-list"
             ###git rev-list HEAD
             ####echo "reflog"
             ####git reflog show origin/master
-            echo ::set-env name=COMMIT_FILES::${COMMIT_FILES}
+            echo ::set-env name=FILES_COMMITED::${FILES_COMMITED}
             echo "files again"
-            echo ${{ env.COMMIT_FILES }}
+            echo ${{ env.FILES_COMMITED }}
             exit 111
           env:
             TF_WORKING_DIR : ${{ env.TF_WORKING_DIR}}
