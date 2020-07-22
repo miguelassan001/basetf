@@ -72,9 +72,9 @@
             jq .after $GITHUB_EVENT_PATH --raw-output
             jq .before $GITHUB_EVENT_PATH --raw-output
             echo "..."
-            #export COMMIT_ID=$(jq .after $GITHUB_EVENT_PATH --raw-output)
+            export COMMIT_ID=$(jq .after $GITHUB_EVENT_PATH --raw-output)
             echo "commitid=$COMMIT_ID"
-            git diff-tree --no-commit-id --name-only -r $COMMIT_ID
+            git diff-tree --name-only -r $COMMIT_ID
             #git show --pretty="" --name-only $COMMIT_ID
             echo "rev-list"
             git rev-list HEAD
