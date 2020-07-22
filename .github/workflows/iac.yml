@@ -69,6 +69,9 @@
           run: |
             which git 
             echo "...."
+            jq .after $GITHUB_EVENT_PATH
+            jq .before $GITHUB_EVENT_PATH
+            echo "..."
             #export COMMIT_ID=$(jq .after $GITHUB_EVENT_PATH --raw-output)
             #git show --pretty="" --name-only $COMMIT_ID
             git rev-list HEAD
