@@ -26,6 +26,7 @@
   jobs:
     validate_terraform:
       name: Terraform
+      ## no latest!!!
       runs-on: ubuntu-latest
 
       steps:
@@ -85,6 +86,8 @@
             echo "files committed"
             echo ${{ env.FILES_COMMITTED }}
             exit 111
+
+        # copy permutations to deployment repo
 
 
         # Config of: terraform backend (tfstate store) and resource destination
