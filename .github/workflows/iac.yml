@@ -67,33 +67,24 @@
         #     echo ::set-env name=Environment_Commited::${ENVIRONMENT_COMMIT_MESSAGE}
         #   working-directory: ${{ env.TF_WORKING_DIR}}
 
-        # Get environment
-        - name: 'Get files between two pushes (1+ commits)'
+        # Get files commited
+        - name: 'Get files commited between two pushes (1+ commits)'
           run: |
-            which git 
-            echo "...."
             export COMMIT_ID_CURRENT=$(jq .after $GITHUB_EVENT_PATH --raw-output)
             export COMMIT_ID_BEFORE=$(jq .before $GITHUB_EVENT_PATH --raw-output)
-            echo "...."
-            echo "commit_ids=\n$COMMIT_ID_CURRENT\n$COMMIT_ID_BEFORE"
-            echo "files"
-            FILES_COMMITED=$(git diff --name-only $COMMIT_ID_CURRENT $COMMIT_ID_BEFORE|sort|uniq|grep -i ${TF_ENVIROMENTS_PATH}|awk -F${TF_ENVIROMENTS_PATH} '{ print $2 }')
-            echo $FILES_COMMITED
-            ###echo "rev-list"
-            ###git rev-list HEAD
-            ####echo "reflog"
-            ####git reflog show origin/master
-            echo ::set-env name=FILES_COMMITED::${FILES_COMMITED}
+            #echo "FILES_COMMITTED"
+            FILES_COMMITTED=$(git diff --name-only $COMMIT_ID_CURRENT $COMMIT_ID_BEFORE|sort|uniq|grep -i ${TF_ENVIROMENTS_PATH}|awk -F${TF_ENVIROMENTS_PATH} '{ print $2 }')
+            #echo $FILES_COMMITTED
+            echo ::set-env name=FILES_COMMITTED::${FILES_COMMITTED}
           env:
-            TF_WORKING_DIR : ${{ env.TF_WORKING_DIR}}
+            TF_ENVIROMENTS_PATH : ${{ env.TF_ENVIROMENTS_PATH}}
 
-        - name: ''
+        # Get terraform enviroments
+        - name: 'Select Environments'
           run: |
-            echo "files again"
-            echo ${{ env.FILES_COMMITED }}
+            echo "files committed"
+            echo ${{ env.FILES_COMMITTED }}
             exit 111
-
-
 
 
         # Config of: terraform backend (tfstate store) and resource destination
@@ -114,6 +105,7 @@
           env:
             ENVIROMENT_COMMITED : ${{ env.Environment_Commited }}
             # github future: dynamic secret variable name ${{ secrets.AZ_TF_BACKEND_$VARIABLE }}
+            # possible solution: get secrets from GITHUB API
             AZ_TF_BACKEND_DEV : ${{ secrets.AZ_TF_BACKEND_DEV }}
             AZ_TF_LANDING_DEV : ${{ secrets.AZ_TF_LANDING_DEV }}
             TF_CLOUD_VARS_DEV : ${{ secrets.TF_CLOUD_VARS_DEV }}
