@@ -85,7 +85,6 @@
           run: |
             echo "files committed"
             echo ${{ env.FILES_COMMITTED }}
-            exit 111
 
         # copy permutations to deployment repo
 
@@ -100,13 +99,16 @@
             export AZ_TF_BACKEND="AZ_TF_BACKEND_$ENVIRONMENT"
             export AZ_TF_LANDING="AZ_TF_LANDING_$ENVIRONMENT"
             export TF_CLOUD_VARS="TF_CLOUD_VARS_$ENVIRONMENT"
+            env|grep TF
             bash -c 'echo ${!AZ_TF_BACKEND} > ${PREFIX}-backend.tfvars.json'
             bash -c 'echo ${!AZ_TF_LANDING} > ${PREFIX}-landing.tfvars.json'
             bash -c 'if ([[ -n "${!TF_CLOUD_VARS}" ]] || [[ ! -z ${!TF_CLOUD_VARS} ]]) then echo ${!TF_CLOUD_VARS} > ${PREFIX}-cloud.tfvars.json; fi'
             echo ::set-env name=PREFIX::${PREFIX}
+
+            exit 111
           working-directory: ${{ env.TF_WORKING_DIR}}
           env:
-            ENVIROMENT_COMMITED : ${{ env.Environment_Commited }}
+            ENVIROMENT_COMMITED : 'dev'
             # github future: dynamic secret variable name ${{ secrets.AZ_TF_BACKEND_$VARIABLE }}
             # possible solution: get secrets from GITHUB API
             AZ_TF_BACKEND_DEV : ${{ secrets.AZ_TF_BACKEND_DEV }}
