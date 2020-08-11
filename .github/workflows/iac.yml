@@ -85,11 +85,17 @@
           run: |
             echo "files committed"
             echo ${{ env.FILES_COMMITTED }}
+            sed 's:[^/]*$::' $FILES_COMMITTED
+            echo "---------"
+            ARRAY_FILES_COMMITTED=()
             IFS=$'\n' ARRAY_FILES_COMMITTED=($FILES_COMMITTED)
             echo ${#ARRAY_FILES_COMMITTED}
             echo ${ARRAY_FILES_COMMITTED[@]}
+            echo "---------"
             # copy permutations to deployment repo
             exit 111
+          env:
+            FILES_COMMITTED : ${{ env.FILES_COMMITTED }}
 
         # Config of: terraform backend (tfstate store) and resource destination
         - name: 'Select Terraform Backend and Landing'
