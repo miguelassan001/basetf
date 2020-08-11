@@ -85,6 +85,9 @@
           run: |
             echo "files committed"
             echo ${{ env.FILES_COMMITTED }}
+            IFS=$'\n' ARRAY_FILES_COMMITTED=($FILES_COMMITTED)
+            echo ${#ARRAY_FILES_COMMITTED}
+            echo ${ARRAY_FILES_COMMITTED[@]}
             # copy permutations to deployment repo
             exit 111
 
