@@ -85,12 +85,11 @@
           run: |
             echo "files committed"
             echo ${{ env.FILES_COMMITTED }}
-            sed 's:[^/]*$::' $FILES_COMMITTED
+            FOLDERS_COMITTED=$(echo $FILES_COMMITTED | sed 's:[^/]*$::' )
             echo "---------"
-            ARRAY_FILES_COMMITTED=()
-            IFS=$'\n' ARRAY_FILES_COMMITTED=($FILES_COMMITTED)
-            echo ${#ARRAY_FILES_COMMITTED}
-            echo ${ARRAY_FILES_COMMITTED[@]}
+            IFS=$'\n' ARRAY_FOLDERS_COMITTED=($FOLDERS_COMITTED)
+            echo ${#ARRAY_FOLDERS_COMITTED}
+            echo ${ARRAY_FOLDERS_COMITTED[@]}
             echo "---------"
             # copy permutations to deployment repo
             exit 111
