@@ -85,9 +85,7 @@
           run: |
             echo "files committed"
             echo ${{ env.FILES_COMMITTED }}
-
-        # copy permutations to deployment repo
-
+            # copy permutations to deployment repo
             exit 111
 
         # Config of: terraform backend (tfstate store) and resource destination
