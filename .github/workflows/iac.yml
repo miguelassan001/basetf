@@ -88,6 +88,7 @@
 
         # copy permutations to deployment repo
 
+            exit 111
 
         # Config of: terraform backend (tfstate store) and resource destination
         - name: 'Select Terraform Backend and Landing'
@@ -104,17 +105,7 @@
             bash -c 'echo ${!AZ_TF_LANDING} > ${PREFIX}-landing.tfvars.json'
             bash -c 'if ([[ -n "${!TF_CLOUD_VARS}" ]] || [[ ! -z ${!TF_CLOUD_VARS} ]]) then echo ${!TF_CLOUD_VARS} > ${PREFIX}-cloud.tfvars.json; fi'
             echo ::set-env name=PREFIX::${PREFIX}
-
-            curl --request POST \
-              --url https://api.github.com/repos/${{ github.repository }}/issues \
-              --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
-              --header 'content-type: application/json' \
-              --data '{
-                        "title": "Automated issue for commit: ${{ github.sha }}",
-                        "body": "This issue was automatically created by the GitHub Action workflow **${{ github.workflow }}**. \n\n The commit hash was: _${{ github.sha }}_."
-              }'
-
-            exit 111
+          
           working-directory: ${{ env.TF_WORKING_DIR}}
           env:
             ENVIROMENT_COMMITED : 'dev'
