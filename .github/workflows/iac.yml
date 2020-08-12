@@ -75,7 +75,7 @@
             export COMMIT_ID_BEFORE=$(jq .before $GITHUB_EVENT_PATH --raw-output)
             printf "COMMIT_ID_CURRENT:$COMMIT_ID_CURRENT\nCOMMIT_ID_BEFORE:$COMMIT_ID_BEFORE"
             FILES_COMMITTED=$(git diff --name-only $COMMIT_ID_CURRENT $COMMIT_ID_BEFORE|uniq|grep -i ${TF_ENVIROMENTS_PATH}|awk -F${TF_ENVIROMENTS_PATH} '{ print $2 }'|sort)
-            printf "FILES_COMMITTED:\n${FILES_COMMITTED}"
+            printf "FILES_COMMITTED:\n %s" "${FILES_COMMITTED}"
             echo ::set-env name=FILES_COMMITTED::${FILES_COMMITTED}
           env:
             TF_ENVIROMENTS_PATH : ${{ env.TF_ENVIROMENTS_PATH}}
@@ -87,11 +87,11 @@
             # build array
             ARRAY_FILES_COMMITTED=()
             while read i ; do ARRAY_FILES_COMMITTED+=( $i) ; done <<< "$FILES_COMMITTED"
-            printf "ARRAY_FILES_COMMITTED:\n${#ARRAY_FILES_COMMITTED}\n" ;echo "${ARRAY_FILES_COMMITTED[@]}"
+            printf "ARRAY_FILES_COMMITTED:\n %s" "${#ARRAY_FILES_COMMITTED}\n" ;echo "${ARRAY_FILES_COMMITTED[@]}"
             # get folder/environment removing last file
             ARRAY_FOLDERS_COMITTED=()
             for i in "${ARRAY_FILES_COMMITTED[@]}"; do ARRAY_FOLDERS_COMITTED+=( $(find $(echo $i|sed 's:[^/]*$::') -type d)); done
-            printf "ARRAY_FOLDERS_COMITTED:\n${#ARRAY_FOLDERS_COMITTED}\n" ;echo "${ARRAY_FOLDERS_COMITTED[@]}"
+            printf "ARRAY_FOLDERS_COMITTED:\n %s" "${#ARRAY_FOLDERS_COMITTED}\n" ;echo "${ARRAY_FOLDERS_COMITTED[@]}"
             echo "---------"
             # copy permutations to deployment repo
             exit 111
