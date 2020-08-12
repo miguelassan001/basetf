@@ -88,11 +88,11 @@
             # build array
             ARRAY_FILES_COMMITTED=()
             while read i ; do ARRAY_FILES_COMMITTED+=( $i) ; done <<< "$FILES_COMMITTED"
-            printf "ARRAY_FILES_COMMITTED:\n %s" "${#ARRAY_FILES_COMMITTED}" ;echo "${ARRAY_FILES_COMMITTED[@]}"
+            printf "ARRAY_FILES_COMMITTED:\n %s\n" "${#ARRAY_FILES_COMMITTED}" ;echo "${ARRAY_FILES_COMMITTED[@]}"
             # get folder/environment removing last file
             ARRAY_FOLDERS_COMITTED=()
             for i in "${ARRAY_FILES_COMMITTED[@]}"; do ARRAY_FOLDERS_COMITTED+=( $(find $(echo $i|sed 's:[^/]*$::') -type d)); done
-            printf "ARRAY_FOLDERS_COMITTED:\n %s" "${#ARRAY_FOLDERS_COMITTED}" ;echo "${ARRAY_FOLDERS_COMITTED[@]}"
+            printf "ARRAY_FOLDERS_COMITTED:\n %s\n" "${#ARRAY_FOLDERS_COMITTED}" ;echo "${ARRAY_FOLDERS_COMITTED[@]}"
             echo "---------"
             # copy permutations to deployment repo
             exit 111
