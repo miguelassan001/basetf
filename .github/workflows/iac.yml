@@ -76,7 +76,7 @@
             printf "COMMIT_ID_CURRENT:%s\nCOMMIT_ID_BEFORE:%s\n" "$COMMIT_ID_CURRENT" "$COMMIT_ID_BEFORE"
             FILES_COMMITTED=$(git diff --name-only $COMMIT_ID_CURRENT $COMMIT_ID_BEFORE|uniq|grep -i ${TF_ENVIROMENTS_PATH}|awk -F${TF_ENVIROMENTS_PATH} '{ print $2 }'|sort)
             printf "FILES_COMMITTED:\n%s\n" "${FILES_COMMITTED}"
-            echo ::set-env name=FILES_COMMITTED::${FILES_COMMITTED}
+            echo ::set-env name=FOLDERS_COMITTED::${FOLDERS_COMITTED}
             
           env:
             TF_ENVIROMENTS_PATH : ${{ env.TF_ENVIROMENTS_PATH}}
@@ -86,12 +86,19 @@
           run: |
             echo "FILES_COMMITTED:$FILES_COMMITTED"
             # build array
-            ARRAY_FILES_COMMITTED=()
-            while read i ; do ARRAY_FILES_COMMITTED+=( $i) ; done <<< "$FILES_COMMITTED"
-            printf "ARRAY_FILES_COMMITTED:\n %s\n" "${#ARRAY_FILES_COMMITTED}" ;echo "${ARRAY_FILES_COMMITTED[@]}"
+            UNIQUE_FOLDERS_COMMITTED=$(echo $FILES_COMMITTED|sed 's:[^/]*$::g'|uniq|sort)
+            echo "UNIQUE_FOLDERS_COMMITTED:"; echo"$UNIQUE_FOLDERS_COMMITTED"
+            ARRAY_UNIQUE_FOLDERS_COMMITTED=()
+            while read I ; do ARRAY_UNIQUE_FOLDERS_COMMITTED+=( $I ) ; done <<< "$UNIQUE_FOLDERS_COMMITTED"
+            echo "FOLDERS_COMMITTED: ${#ARRAY_UNIQUE_FOLDERS_COMMITTED}" ;echo "${ARRAY_UNIQUE_FOLDERS_COMMITTED[@]}"
             # get folder/environment removing last file
             ARRAY_FOLDERS_COMITTED=()
-            for i in "${ARRAY_FILES_COMMITTED[@]}"; do ARRAY_FOLDERS_COMITTED+=( $(find $(echo $i|sed 's:[^/]*$::') -type d)); done
+            for DIR in "${ARRAY_UNIQUE_FOLDERS_COMMITTED[@]}"; do 
+              if (( $(find $DIR -type d|wc -l) == 1 )) 
+                ARRAY_FOLDERS_COMITTED+=( $DIR )
+                echo "------------          $DIR        ---------------"
+              fi
+            done
             printf "ARRAY_FOLDERS_COMITTED:\n %s\n" "${#ARRAY_FOLDERS_COMITTED}" ;echo "${ARRAY_FOLDERS_COMITTED[@]}"
             echo "---------"
             # copy permutations to deployment repo
