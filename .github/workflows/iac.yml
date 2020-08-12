@@ -73,10 +73,10 @@
           run: |
             export COMMIT_ID_CURRENT=$(jq .after $GITHUB_EVENT_PATH --raw-output)
             export COMMIT_ID_BEFORE=$(jq .before $GITHUB_EVENT_PATH --raw-output)
-            echo "COMMIT_ID_CURRENT:$COMMIT_ID_CURRENT\nCOMMIT_ID_BEFORE:$COMMIT_ID_BEFORE"
+            printf "COMMIT_ID_CURRENT:$COMMIT_ID_CURRENT\nCOMMIT_ID_BEFORE:$COMMIT_ID_BEFORE"
             #echo "FILES_COMMITTED"
-            FILES_COMMITTED=$(git diff --name-only $COMMIT_ID_CURRENT $COMMIT_ID_BEFORE|sort|uniq|grep -i ${TF_ENVIROMENTS_PATH}|awk -F${TF_ENVIROMENTS_PATH} '{ print $2 }')
-            echo "FILES_COMMITTED:\n$FILES_COMMITTED"
+            FILES_COMMITTED=$(git diff --name-only $COMMIT_ID_CURRENT $COMMIT_ID_BEFORE|uniq|grep -i ${TF_ENVIROMENTS_PATH}|awk -F${TF_ENVIROMENTS_PATH} '{ print $2 }'|sort)
+            printf "FILES_COMMITTED:\n${FILES_COMMITTED}"
             echo ::set-env name=FILES_COMMITTED::${FILES_COMMITTED}
           env:
             TF_ENVIROMENTS_PATH : ${{ env.TF_ENVIROMENTS_PATH}}
@@ -86,20 +86,20 @@
           run: |
             echo "files committed"
             echo ${{ env.FILES_COMMITTED }}
-            ARRAY_FILES_COMMITTED=($FILES_COMMITTED)
-            echo ${#ARRAY_FILES_COMMITTED}
-            echo ${ARRAY_FILES_COMMITTED[@]}
-            exit 111
-            FOLDERS_COMITTED=$(echo $FILES_COMMITTED | sed 's:[^/]*$::' )
-            echo "---------"
-            IFS=$'\n' ARRAY_FOLDERS_COMITTED=($FOLDERS_COMITTED)
-            echo ${#ARRAY_FOLDERS_COMITTED}
-            echo ${ARRAY_FOLDERS_COMITTED[@]}
+            # build array
+            ARRAY_FILES_COMMITTED=()
+            while read i ; do ARRAY_FILES_COMMITTED+=( $i) ; done <<< "$FILES_COMMITTED"
+            printf "ARRAY_FILES_COMMITTED:\n${#ARRAY_FILES_COMMITTED}\n" ;echo "${ARRAY_FILES_COMMITTED[@]}"
+            # get folder/environment removing last file
+            ARRAY_FOLDERS_COMITTED=()
+            for i in "${ARRAY_FILES_COMMITTED[@]}"; do ARRAY_FOLDERS_COMITTED+=( $(find $(echo $i|sed 's:[^/]*$::') -type d)); done
+            printf "ARRAY_FOLDERS_COMITTED:\n${#ARRAY_FOLDERS_COMITTED}\n" ;echo "${ARRAY_FOLDERS_COMITTED[@]}"
             echo "---------"
             # copy permutations to deployment repo
             
           env:
             FILES_COMMITTED : ${{ env.FILES_COMMITTED }}
+          working-directory: ${{ env.TF_WORKING_DIR}}/${{ env.TF_ENVIROMENTS_PATH}}
 
         # Config of: terraform backend (tfstate store) and resource destination
         - name: 'Select Terraform Backend and Landing'
