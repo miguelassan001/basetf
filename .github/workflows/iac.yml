@@ -94,7 +94,7 @@
             # get folder/environment removing last file
             ARRAY_FOLDERS_COMITTED=()
             for DIR in "${ARRAY_UNIQUE_FOLDERS_COMMITTED[@]}"; do 
-              if (( $(find $DIR -type d|wc -l) == 1 )) 
+              if (( $(find $DIR -type d|wc -l) == 1 )) then
                 ARRAY_FOLDERS_COMITTED+=( $DIR )
                 echo "------------          $DIR        ---------------"
               fi
